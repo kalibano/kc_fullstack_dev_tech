@@ -29,6 +29,11 @@
 ```
 docker-compose up --build
 ```
+- To create tables in db
+- run php migrate.php 
+
+- To migrate dummy datay
+- php import_data.php
 
 ## Hosts:
 API host: http://api.cc.localhost

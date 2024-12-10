@@ -6,13 +6,13 @@ services:
     command:
       - --api.insecure=true
       - --providers.docker
-      - --entrypoints.http.address=:80
-      - --entrypoints.mysql.address=:3306
+      - --entrypoints.http.address=:81
+      - --entrypoints.mysql.address=:3307
       - --providers.docker.exposedbydefault=true
     ports:
-      - "80:80"
+      - "8081:80"
       - "8080:8080"
-      - "3306:3306"
+      - "3307:3307"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
   db:
@@ -28,9 +28,9 @@ services:
     labels:
       - traefik.tcp.routers.mysql.entrypoints=mysql
       - traefik.tcp.routers.mysql.rule=HostSNI(`*`)
-      - traefik.tcp.services.mysql.loadbalancer.server.port=3306
+      - traefik.tcp.services.mysql.loadbalancer.server.port=3307
     ports:
-      - 8001:3306
+      - 8001:3307
 
   api:
     image: php:8.3-apache
@@ -38,21 +38,25 @@ services:
     depends_on:
       - db
     volumes:
-      - ./api/:/var/www/html/
+      - ./api/:/var/www/html/new/kc-fullstack-dev-tech-task/api
     stdin_open: true
     tty: true
     hostname: api.cc.localhost
     labels:
       - traefik.http.routers.api.rule=Host(`api.cc.localhost`)
+      - traefik.http.middlewares.cors.headers.accessControlAllowOrigin=*
+      - traefik.http.middlewares.cors.headers.accessControlAllowMethods=GET,POST,OPTIONS
+      - traefik.http.middlewares.cors.headers.accessControlAllowHeaders=Content-Type,Authorization
+      - traefik.http.routers.api.middlewares=cors
   front:
     image: php:8.3-apache
     container_name: front
     depends_on:
       - api
     volumes:
-      - ./front_end/:/var/www/html/
+      - ./front_end/:/var/www/html/new/kc-fullstack-dev-tech-task/front_end
     stdin_open: true
     tty: true
-    hostname: api.cc.localhost
+    hostname: cc.localhost
     labels:
       - traefik.http.routers.front.rule=Host(`cc.localhost`)

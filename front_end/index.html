@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Catalog</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+
+<body>
+    <div class="container bg-light mt-4">
+        <div class="row">
+            <div class="col-md-4 col-lg-3">
+                <div class="sidebar p-3">
+                    <ul id="category-list" class="list-group bg-body-secondary"></ul>
+                </div>
+            </div>
+            <div class="col-md-8 col-lg-9">
+                <div class="main-content container">
+                    <h2 class="mb-4 text-center">Course Catalog</h2>
+                    <div id="course-list" class="row"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiUrl = 'http://api.cc.localhost/api.php';
+
+        function fetchCategories() {
+            fetch(`${apiUrl}?action=categories`)
+                .then(response => response.json())
+                .then(data => {
+                    const categoryListEl = document.getElementById('category-list');
+                    categoryListEl.innerHTML = ''; // Clear the list before adding new items
+
+                    for (const categoryKey in data) {
+                        if (data.hasOwnProperty(categoryKey)) {
+                            const category = data[categoryKey];
+
+                            // Create category list item
+                            const categoryItem = document.createElement('li');
+                            categoryItem.classList.add('list-group-item');
+                            categoryItem.innerHTML = `
+                        <a href="#" class="category-item text-black" data-id="${category.id}">
+                            ${category.name} (${category.course_count})
+                        </a>
+                    `;
+
+                            // Create subcategory list (visible by default)
+                            const subcategoryListEl = document.createElement('ul');
+                            subcategoryListEl.classList.add('list-group', 'ms-3');
+                            subcategoryListEl.style.display = 'block'; // Visible by default
+
+                            category.subcategories.forEach(subcategory => {
+                                const subcategoryItem = document.createElement('li');
+                                subcategoryItem.classList.add('list-group-item');
+                                subcategoryItem.innerHTML = `
+                            <a href="#" class="subcategory-item text-black" data-id="${subcategory.id}">
+                                ${subcategory.name} (${subcategory.course_count})
+                            </a>
+                        `;
+                                subcategoryListEl.appendChild(subcategoryItem);
+
+                                // Add click event to subcategories to filter courses
+                                subcategoryItem.querySelector('.subcategory-item').addEventListener('click', function (event) {
+                                    event.preventDefault();
+                                    const subcategoryId = subcategory.id;
+                                    fetchCourses(subcategoryId); // Fetch and display courses for the selected subcategory
+                                });
+                            });
+
+                            // Append subcategory list to category item
+                            categoryItem.appendChild(subcategoryListEl);
+                            categoryListEl.appendChild(categoryItem);
+
+                            // Add event listener to categories
+                            categoryItem.querySelector('.category-item').addEventListener('click', function (event) {
+                                event.preventDefault();
+                                const categoryId = category.id;
+                                fetchCourses(categoryId); // Fetch and display courses for the selected category
+                            });
+                        }
+                    }
+                })
+                .catch(error => console.error('Error fetching categories:', error));
+        }
+
+        // Fetch and display courses
+        function fetchCourses(categoryId = null) {
+            let url = `${apiUrl}?action=courses`;
+            if (categoryId) url += `&category_id=${categoryId}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const courseList = document.getElementById('course-list');
+                    if (courseList) {
+                        courseList.innerHTML = data.map(course => {
+                            return `
+                            <div class="col-lg-3 col-md-100 p-2 h-100 position-relative">
+                                <div class="position-relative">
+                                    <img class="image-preview w-100" src="${course.image_preview}" alt="${course.name}" />
+                                    <span class="badge bg-white text-black position-absolute top-0 end-0 m-2">${course.category_name}</span>
+                                </div>
+                                <p class="mt-2">${course.title}</p>
+                                <p class="description"><small>${course.description}</small></p>
+                            </div>
+                        `;
+                        }).join('');
+                    }
+                });
+        }
+
+
+
+        // Initial load
+        fetchCategories();
+        fetchCourses();
+    </script>
+</body>
+
+</html>
